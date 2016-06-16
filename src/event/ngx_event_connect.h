@@ -37,14 +37,14 @@ typedef void (*ngx_event_save_peer_session_pt)(ngx_peer_connection_t *pc,
 struct ngx_peer_connection_s {
     ngx_connection_t                *connection;
 
-    struct sockaddr                 *sockaddr;
+    struct sockaddr                 *sockaddr; //远端服务器socket信息
     socklen_t                        socklen;
     ngx_str_t                       *name;
 
-    ngx_uint_t                       tries;
+    ngx_uint_t                       tries; //连接失败后可以重试的次数
     ngx_msec_t                       start_time;
 
-    ngx_event_get_peer_pt            get;
+    ngx_event_get_peer_pt            get; //从连接池中获取长连接
     ngx_event_free_peer_pt           free;
     void                            *data;
 

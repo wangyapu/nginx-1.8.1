@@ -159,11 +159,11 @@ struct ngx_connection_s {
 
     ngx_buf_t          *buffer;
 
-    ngx_queue_t         queue;
+    ngx_queue_t         queue; //将当前连接添加到ngx_cycle_t核心结构中的reuseable_connections_queue双向链表中，表示可重用连接
 
-    ngx_atomic_uint_t   number;
+    ngx_atomic_uint_t   number; //连接使用次数
 
-    ngx_uint_t          requests;
+    ngx_uint_t          requests; //处理请求次数
 
     unsigned            buffered:8;
 
