@@ -123,9 +123,9 @@ struct ngx_connection_s {
     连接未使用时，data成员用于充当连接池中空闲连接链表中的next指针。当连接被使用时，data的意义由使用它的nginx模块而定，
     如在HTTP框架中，data指向ngx_http_request_t请求
     */
-    void               *data; //连接对应的读事件
-    ngx_event_t        *read; //连接对应的写事件
-    ngx_event_t        *write;
+    void               *data;
+    ngx_event_t        *read; //连接对应的读事件
+    ngx_event_t        *write; //连接对应的写事件
 
     ngx_socket_t        fd;
 

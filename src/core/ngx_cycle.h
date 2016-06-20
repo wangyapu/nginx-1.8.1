@@ -43,11 +43,11 @@ struct ngx_cycle_s {
 
     ngx_uint_t                log_use_stderr;  /* unsigned  log_use_stderr:1; */
 
-    ngx_connection_t        **files;
+    ngx_connection_t        **files; //连接文件
     ngx_connection_t         *free_connections;
-    ngx_uint_t                free_connection_n;
+    ngx_uint_t                free_connection_n; //空闲连接个数
 
-    ngx_queue_t               reusable_connections_queue;
+    ngx_queue_t               reusable_connections_queue; //再利用连接队列
 
     ngx_array_t               listening;
     ngx_array_t               paths;
