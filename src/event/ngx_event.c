@@ -222,10 +222,16 @@ ngx_process_events_and_timers(ngx_cycle_t *cycle)
     }
 
     if (ngx_use_accept_mutex) {
+        // nginx.conf配置了每个nginx worker进程能够处理的最大连接数，当达到最大数的7/8时，ngx_accept_disabled > 0，此时处于满负荷，将不再去处理新连接
         if (ngx_accept_disabled > 0) {
             ngx_accept_disabled--;
 
         } else {
+
+            /*
+             * 获得accept锁，仅有一个worker进程可以得到锁。获得锁不是阻塞过程，都是立刻返回，获取成功ngx_accept_mutex_held被置为1。
+             * 拿到锁，意味着监听句柄被放到本进程的epoll中了，如果没有拿到锁，则监听句柄会被从epoll中取出。
+             */
             if (ngx_trylock_accept_mutex(cycle) == NGX_ERROR) {
                 return;
             }
@@ -586,8 +592,8 @@ ngx_event_process_init(ngx_cycle_t *cycle)
     ecf = ngx_event_get_conf(cycle->conf_ctx, ngx_event_core_module);
 
     if (ccf->master && ccf->worker_processes > 1 && ecf->accept_mutex) {
-        ngx_use_accept_mutex = 1;
-        ngx_accept_mutex_held = 0;
+        ngx_use_accept_mutex = 1; //开启负载均衡策略
+        ngx_accept_mutex_held = 0; //标识当前是否拥有锁
         ngx_accept_mutex_delay = ecf->accept_mutex_delay;
 
     } else {
