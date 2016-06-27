@@ -259,6 +259,7 @@ ngx_palloc_large(ngx_pool_t *pool, size_t size)
         return NULL;
     }
 
+    //链接数据区指针p到large,直接插入到large链表的头
     large->alloc = p;
     large->next = pool->large;
     pool->large = large;
