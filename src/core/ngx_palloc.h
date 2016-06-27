@@ -41,26 +41,26 @@ struct ngx_pool_cleanup_s {
 typedef struct ngx_pool_large_s  ngx_pool_large_t;
 
 struct ngx_pool_large_s {
-    ngx_pool_large_t     *next;
-    void                 *alloc;
+    ngx_pool_large_t     *next; //用链表组织，指向下一块较大内存
+    void                 *alloc; //实际内存地址
 };
 
 
 typedef struct {
-    u_char               *last;
-    u_char               *end;
-    ngx_pool_t           *next;
-    ngx_uint_t            failed;
+    u_char               *last; //当前内存分配结束位置，即下一段可分配内存的起始位置
+    u_char               *end; //内存池结束位置
+    ngx_pool_t           *next; //链接到下一个内存池，内存池的很多块内存就是通过该指针连成链表
+    ngx_uint_t            failed; //内存池分配失败次数
 } ngx_pool_data_t;
 
 
 struct ngx_pool_s {
-    ngx_pool_data_t       d;
-    size_t                max;
-    ngx_pool_t           *current;
-    ngx_chain_t          *chain;
-    ngx_pool_large_t     *large;
-    ngx_pool_cleanup_t   *cleanup;
+    ngx_pool_data_t       d; //内存池的数据块
+    size_t                max; //数据块大小，小块内存的最大值
+    ngx_pool_t           *current; //当前内存池的指针
+    ngx_chain_t          *chain; //该指针挂接一个ngx_chain_t结构
+    ngx_pool_large_t     *large; //指向大块内存分配，nginx中，大块内存分配直接采用标准系统接口malloc
+    ngx_pool_cleanup_t   *cleanup; //释放内存的callback
     ngx_log_t            *log;
 };
 
