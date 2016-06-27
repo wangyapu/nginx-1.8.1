@@ -29,6 +29,7 @@ ngx_create_pool(size_t size, ngx_log_t *log)
     p->d.failed = 0;
 
     size = size - sizeof(ngx_pool_t);
+    //最大不超过4095B
     p->max = (size < NGX_MAX_ALLOC_FROM_POOL) ? size : NGX_MAX_ALLOC_FROM_POOL;
 
     p->current = p;
@@ -48,6 +49,10 @@ ngx_destroy_pool(ngx_pool_t *pool)
     ngx_pool_large_t    *l;
     ngx_pool_cleanup_t  *c;
 
+    /**
+     * cleanup指向析构函数，用于执行相关的内存池销毁之前的清理工作，如文件的关闭等。
+     * 对内存池中的析构函数遍历调用
+     */
     for (c = pool->cleanup; c; c = c->next) {
         if (c->handler) {
             ngx_log_debug1(NGX_LOG_DEBUG_ALLOC, pool->log, 0,
@@ -83,6 +88,7 @@ ngx_destroy_pool(ngx_pool_t *pool)
 
 #endif
 
+    //彻底销毁内存池
     for (p = pool, n = pool->d.next; /* void */; p = n, n = n->d.next) {
         ngx_free(p);
 
@@ -122,11 +128,13 @@ ngx_palloc(ngx_pool_t *pool, size_t size)
     u_char      *m;
     ngx_pool_t  *p;
 
+    //小于max值，则从current结点开始遍历pool链表
     if (size <= pool->max) {
 
         p = pool->current;
 
         do {
+            //以last开始，计算以NGX_ALIGNMENT对齐的偏移位置指针
             m = ngx_align_ptr(p->d.last, NGX_ALIGNMENT);
 
             if ((size_t) (p->d.end - m) >= size) {
@@ -135,13 +143,18 @@ ngx_palloc(ngx_pool_t *pool, size_t size)
                 return m;
             }
 
+            //如果不满足，则查找下一个链
             p = p->d.next;
 
         } while (p);
-
+        /**
+         * 遍历完整个内存池链表均未找到合适大小的内存块供分配，则执行ngx_palloc_block()来分配
+         * 为该内存池再分配一个block，该block的大小为链表中前面每一个block大小的值
+         * 一个内存池是由多个block链接起来的。分配成功后，将该block链入该poll链的最后
+         */
         return ngx_palloc_block(pool, size);
     }
-
+    //大于max值，则执行大块内存分配的函数ngx_palloc_large，在large链表里分配内存
     return ngx_palloc_large(pool, size);
 }
 
@@ -190,6 +203,7 @@ ngx_palloc_block(ngx_pool_t *pool, size_t size)
         return NULL;
     }
 
+    //block初始化
     new = (ngx_pool_t *) m;
 
     new->d.end = m + psize;
@@ -201,11 +215,13 @@ ngx_palloc_block(ngx_pool_t *pool, size_t size)
     new->d.last = m + size;
 
     for (p = pool->current; p->d.next; p = p->d.next) {
+        //分配失败次数大于4,移动current指针
         if (p->d.failed++ > 4) {
             pool->current = p->d.next;
         }
     }
 
+    ///将分配的block加入内存池
     p->d.next = new;
 
     return m;
